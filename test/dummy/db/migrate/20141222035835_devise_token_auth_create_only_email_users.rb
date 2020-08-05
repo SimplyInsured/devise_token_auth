@@ -38,9 +38,9 @@ class DeviseTokenAuthCreateOnlyEmailUsers < ActiveRecord::Migration[4.2]
 
       ## Tokens
       if json_supported_database?
-        t.json :tokens
+        t.json :auth_tokens
       else
-        t.text :tokens
+        t.text :auth_tokens
       end
 
       t.timestamps

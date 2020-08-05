@@ -24,8 +24,8 @@ module DeviseTokenAuth
         #     render_authenticate_error         # Render error unless user or admin are signed in
         #
         #   Use:
-        #     before_action :authenticate_blogger!              # Redirects unless either a user or an admin are authenticated
-        #     before_action ->{ authenticate_blogger! :admin }  # Redirects to the admin login page
+        #     before_filter :authenticate_blogger!              # Redirects unless either a user or an admin are authenticated
+        #     before_filter ->{ authenticate_blogger! :admin }  # Redirects to the admin login page
         #     current_blogger :user                             # Preferably returns a User if one is signed in
         #
         def devise_token_auth_group(group_name, opts = {})
@@ -47,7 +47,7 @@ module DeviseTokenAuth
             def current_#{group_name}(favourite=nil)
               @current_#{group_name} ||= set_group_user_by_token(favourite)
             end
-            
+
             def set_group_user_by_token(favourite)
               mappings = #{mappings}
               mappings.unshift mappings.delete(favourite.to_sym) if favourite
@@ -88,7 +88,7 @@ module DeviseTokenAuth
       end
 
       # Define authentication filters and accessor helpers based on mappings.
-      # These filters should be used inside the controllers as before_actions,
+      # These filters should be used inside the controllers as before_filters,
       # so you can control the scope of the user who should be signed in to
       # access that specific controller/action.
       # Example:
@@ -109,8 +109,8 @@ module DeviseTokenAuth
       #     render_authenticate_error            # Render error unless user or admin is signed in
       #
       #   Use:
-      #     before_action :authenticate_user!  # Tell devise to use :user map
-      #     before_action :authenticate_admin! # Tell devise to use :admin map
+      #     before_filter :authenticate_user!  # Tell devise to use :user map
+      #     before_filter :authenticate_admin! # Tell devise to use :admin map
       #
       def self.define_helpers(mapping) #:nodoc:
         mapping = mapping.name
@@ -118,7 +118,16 @@ module DeviseTokenAuth
         class_eval <<-METHODS, __FILE__, __LINE__ + 1
           def authenticate_#{mapping}!(opts={})
             unless current_#{mapping}
-              render_authenticate_error
+              # DINO - we hacked in the standard devise logic for authentication because
+              # we want to redirect users to the login page after a failed auth, rather
+              # than get a JSON error.  For instance, if we go to /admin, this crashes if
+              # we only return a json response and not a redirect.
+              if DeviseTokenAuth.enable_standard_devise_support
+                opts[:scope] = :#{mapping}
+                warden.authenticate!(opts) if !devise_controller? || opts.delete(:force)
+              else
+                render_authenticate_error
+              end
             end
           end
 

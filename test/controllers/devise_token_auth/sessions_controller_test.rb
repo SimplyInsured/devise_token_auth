@@ -51,18 +51,18 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
           test 'should limit the maximum number of concurrent devices' do
             # increment the number of devices until the maximum is exceeded
             1.upto(DeviseTokenAuth.max_number_of_devices + 1).each do |n|
-              initial_tokens = @existing_user.reload.tokens
+              initial_tokens = @existing_user.reload.auth_tokens
 
               assert_equal(
                 [n, DeviseTokenAuth.max_number_of_devices].min,
-                @existing_user.reload.tokens.length
+                @existing_user.reload.auth_tokens.length
               )
 
               # Already have the max number of devices
               post :create, params: @user_session_params
 
               # A session for a new device maintains the max number of concurrent devices
-              refute_equal initial_tokens, @existing_user.reload.tokens
+              refute_equal initial_tokens, @existing_user.reload.auth_tokens
             end
           end
 
@@ -71,12 +71,12 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
               post :create, params: @user_session_params
             end
 
-            oldest_token, _ = @existing_user.reload.tokens \
+            oldest_token, _ = @existing_user.reload.auth_tokens \
                                 .min_by { |cid, v| v[:expiry] || v['expiry'] }
 
             post :create, params: @user_session_params
 
-            assert_not_includes @existing_user.reload.tokens.keys, oldest_token
+            assert_not_includes @existing_user.reload.auth_tokens.keys, oldest_token
           end
 
           after do
@@ -153,7 +153,7 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
 
         test 'token was destroyed' do
           @existing_user.reload
-          refute @existing_user.tokens[@auth_headers['client']]
+          refute @existing_user.auth_tokens[@auth_headers['client']]
         end
 
         test 'session was destroyed' do

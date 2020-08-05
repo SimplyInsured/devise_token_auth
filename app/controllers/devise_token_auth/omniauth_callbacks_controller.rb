@@ -4,10 +4,15 @@ module DeviseTokenAuth
   class OmniauthCallbacksController < DeviseTokenAuth::ApplicationController
     attr_reader :auth_params
 
-    before_action :validate_auth_origin_url_param
+    # DINO - action --> filter
+    #before_action :validate_auth_origin_url_param
+    before_filter :validate_auth_origin_url_param
 
-    skip_before_action :set_user_by_token, raise: false
-    skip_after_action :update_auth_header
+    # DINO - action --> filter
+    # skip_before_action :set_user_by_token, raise: false
+    # skip_after_action :update_auth_header
+    skip_before_filter :set_user_by_token, raise: false
+    skip_after_filter :update_auth_header
 
     # intermediary route for successful omniauth authentication. omniauth does
     # not support multiple models, so we must resort to this terrible hack.
@@ -45,7 +50,7 @@ module DeviseTokenAuth
     # find the mapping in `omniauth.params`.
     #
     # One example use-case here is for IDP-initiated SAML login.  In that
-    # case, there will have been no initial request in which to save 
+    # case, there will have been no initial request in which to save
     # the devise mapping.  If you are in a situation like that, and
     # your app allows for you to determine somehow what the devise
     # mapping should be (because, for example, it is always the same),
@@ -70,7 +75,9 @@ module DeviseTokenAuth
 
       yield @resource if block_given?
 
-      render_data_or_redirect('deliverCredentials', @auth_params.as_json, @resource.as_json)
+      # DINO: as_json --> attributes for DM support
+      # render_data_or_redirect('deliverCredentials', @auth_params.as_json, @resource.as_json)
+      render_data_or_redirect('deliverCredentials', MultiJson.load(MultiJson.dump(@auth_params)), MultiJson.load(MultiJson.dump(@resource)))
     end
 
     def omniauth_failure
@@ -78,10 +85,10 @@ module DeviseTokenAuth
       render_data_or_redirect('authFailure', error: @error)
     end
 
-    def validate_auth_origin_url_param 
+    def validate_auth_origin_url_param
       return render_error_not_allowed_auth_origin_url if auth_origin_url && blacklisted_redirect_url?(auth_origin_url)
     end
-  
+
 
     protected
 

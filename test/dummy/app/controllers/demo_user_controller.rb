@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class DemoUserController < ApplicationController
-  before_action :authenticate_user!
+  before_filter :authenticate_user!
 
   def members_only
     render json: {
@@ -14,7 +14,7 @@ class DemoUserController < ApplicationController
 
   def members_only_remove_token
     u = User.find(current_user.id)
-    u.tokens = {}
+    u.auth_tokens = {}
     u.save!
 
     render json: {

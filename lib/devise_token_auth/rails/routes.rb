@@ -41,16 +41,6 @@ module ActionDispatch::Routing
         # get namespace name
         namespace_name = @scope[:as]
 
-        # clear scope so controller routes aren't namespaced
-        @scope = ActionDispatch::Routing::Mapper::Scope.new(
-          path:         '',
-          shallow_path: '',
-          constraints:  {},
-          defaults:     {},
-          options:      {},
-          parent:       nil
-        )
-
         mapping_name = resource.underscore.gsub('/', '_')
         mapping_name = "#{namespace_name}_#{mapping_name}" if namespace_name
 

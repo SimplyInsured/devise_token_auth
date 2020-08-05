@@ -318,7 +318,7 @@ class DemoUserControllerTest < ActionDispatch::IntegrationTest
           @old_auth_headers = @auth_headers
           @auth_headers = @resource.create_new_auth_token
           age_token(@resource, @client_id)
-          assert @resource.tokens.count > 1
+          assert @resource.auth_tokens.count > 1
 
           # password changed from new device
           @resource.update(password: 'newsecret123',
@@ -334,7 +334,7 @@ class DemoUserControllerTest < ActionDispatch::IntegrationTest
         end
 
         it 'should have only one token' do
-          assert_equal 1, @resource.tokens.count
+          assert_equal 1, @resource.auth_tokens.count
         end
 
         it 'new request should be successful' do
@@ -421,7 +421,7 @@ class DemoUserControllerTest < ActionDispatch::IntegrationTest
 
             assert_equal(
               [n, DeviseTokenAuth.max_number_of_devices].min,
-              @resource.reload.tokens.length
+              @resource.reload.auth_tokens.length
             )
 
             # Add a new device (and token) ahead of the next iteration
@@ -437,14 +437,14 @@ class DemoUserControllerTest < ActionDispatch::IntegrationTest
           end
 
           # get the oldest token client_id
-          oldest_client_id, = @resource.reload.tokens.min_by do |cid, v|
+          oldest_client_id, = @resource.reload.auth_tokens.min_by do |cid, v|
             v[:expiry] || v['expiry']
           end # => [ 'CLIENT_ID', {token: ...} ]
 
           # create another token, thereby dropping the oldest token
           @resource.create_new_auth_token
 
-          assert_not_includes @resource.reload.tokens.keys, oldest_client_id
+          assert_not_includes @resource.reload.auth_tokens.keys, oldest_client_id
         end
 
         after do

@@ -42,7 +42,7 @@ class User
   field :uid,      type: String, default: ''
 
   ## Tokens
-  field :tokens, type: Hash, default: {}
+  field :auth_tokens, type: Hash, default: {}
 
   include DeviseTokenAuth::Concerns::User
   include FavoriteColor

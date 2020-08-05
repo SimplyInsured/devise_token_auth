@@ -39,7 +39,7 @@ Models that include the `DeviseTokenAuth::Concerns::User` concern will have acce
   token = DeviseTokenAuth::TokenFactory.create
 
   # store client + token in user's token hash
-  @resource.tokens[token.client] = {
+  @resource.auth_tokens[token.client] = {
     token:  token.token_hash,
     expiry: token.expiry
   }

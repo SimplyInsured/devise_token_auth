@@ -1,6 +1,6 @@
 class DeviseTokenAuthCreateConfirmableUsers < ActiveRecord::Migration[5.2]
   def change
-    
+
     create_table(:confirmable_users) do |t|
       ## Required
       t.string :provider, :null => false, :default => "email"
@@ -35,7 +35,7 @@ class DeviseTokenAuthCreateConfirmableUsers < ActiveRecord::Migration[5.2]
       t.string :email
 
       ## Tokens
-      t.text :tokens
+      t.text :auth_tokens
 
       t.timestamps
     end

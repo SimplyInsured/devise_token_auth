@@ -2,10 +2,15 @@
 
 module DeviseTokenAuth
   class RegistrationsController < DeviseTokenAuth::ApplicationController
-    before_action :set_user_by_token, only: [:destroy, :update]
-    before_action :validate_sign_up_params, only: :create
-    before_action :validate_account_update_params, only: :update
-    skip_after_action :update_auth_header, only: [:create, :destroy]
+    # DINO - action --> filter
+    # before_action :set_user_by_token, only: [:destroy, :update]
+    # before_action :validate_sign_up_params, only: :create
+    # before_action :validate_account_update_params, only: :update
+    # skip_after_action :update_auth_header, only: [:create, :destroy]
+    before_filter :set_user_by_token, only: [:destroy, :update]
+    before_filter :validate_sign_up_params, only: :create
+    before_filter :validate_account_update_params, only: :update
+    skip_after_filter :update_auth_header, only: [:create, :destroy]
 
     def create
       build_resource
@@ -31,9 +36,12 @@ module DeviseTokenAuth
       return render_create_error_redirect_url_not_allowed if blacklisted_redirect_url?(@redirect_url)
 
       # override email confirmation, must be sent manually from ctrl
-      callback_name = defined?(ActiveRecord) && resource_class < ActiveRecord::Base ? :commit : :create
-      resource_class.set_callback(callback_name, :after, :send_on_create_confirmation_instructions)
-      resource_class.skip_callback(callback_name, :after, :send_on_create_confirmation_instructions)
+
+      # DINO - SKIPPING ACTIVE RECORD STUFF
+      # callback_name = defined?(ActiveRecord) && resource_class < ActiveRecord::Base ? :commit : :create
+      #
+      # resource_class.set_callback(callback_name, :after, :send_on_create_confirmation_instructions)
+      # resource_class.skip_callback(callback_name, :after, :send_on_create_confirmation_instructions)
 
       if @resource.respond_to? :skip_confirmation_notification!
         # Fix duplicate e-mails by disabling Devise confirmation e-mail
@@ -42,7 +50,6 @@ module DeviseTokenAuth
 
       if @resource.save
         yield @resource if block_given?
-
         unless @resource.confirmed?
           # user will require email authentication
           @resource.send_confirmation_instructions({
@@ -69,6 +76,7 @@ module DeviseTokenAuth
       if @resource
         if @resource.send(resource_update_method, account_update_params)
           yield @resource if block_given?
+
           render_update_success
         else
           render_update_error

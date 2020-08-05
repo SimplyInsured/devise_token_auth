@@ -54,7 +54,7 @@ class DeviseTokenAuth::ConfirmationsControllerTest < ActionController::TestCase
           end
 
           test 'should save the authentication token' do
-            assert @resource.reload.tokens.present?
+            assert @resource.reload.auth_tokens.present?
           end
 
           test 'should redirect to success url' do

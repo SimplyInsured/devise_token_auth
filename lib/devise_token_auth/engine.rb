@@ -42,11 +42,11 @@ module DeviseTokenAuth
   self.enable_standard_devise_support       = false
   self.remove_tokens_after_password_reset   = false
   self.default_callbacks                    = true
-  self.headers_names                        = { 'access-token': 'access-token',
-                                                'client': 'client',
-                                                'expiry': 'expiry',
-                                                'uid': 'uid',
-                                                'token-type': 'token-type' }
+  self.headers_names                        = { 'access-token' => 'access-token',
+                                                'client' => 'client',
+                                                'expiry' => 'expiry',
+                                                'uid' => 'uid',
+                                                'token-type' => 'token-type' }
   self.bypass_sign_in                       = true
   self.send_confirmation_email              = false
   self.require_client_password_reset_token  = false

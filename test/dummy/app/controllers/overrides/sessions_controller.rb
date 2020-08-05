@@ -5,14 +5,16 @@ module Overrides
     OVERRIDE_PROOF = '(^^,)'.freeze
 
     def create
-      @resource = resource_class.dta_find_by(email: resource_params[:email])
+      # DINO Datamapper support
+      # @resource = resource_class.dta_find_by(email: resource_params[:email])
+      @resource = resource_class.first(email: resource_params[:email])
 
       if @resource && valid_params?(:email, resource_params[:email]) && @resource.valid_password?(resource_params[:password]) && @resource.confirmed?
         @token = @resource.create_token
         @resource.save
 
         render json: {
-          data: @resource.as_json(except: %i[tokens created_at updated_at]),
+          data: @resource.as_json(except: %i[auth_tokens created_at updated_at]),
           override_proof: OVERRIDE_PROOF
         }
 

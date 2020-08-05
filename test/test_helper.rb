@@ -45,15 +45,15 @@ class ActiveSupport::TestCase
   # Add more helper methods to be used by all tests here...
 
   def age_token(user, client_id)
-    if user.tokens[client_id]
-      user.tokens[client_id]['updated_at'] = (Time.zone.now - (DeviseTokenAuth.batch_request_buffer_throttle + 10.seconds)).to_s(:rfc822)
+    if user.auth_tokens[client_id]
+      user.auth_tokens[client_id]['updated_at'] = (Time.zone.now - (DeviseTokenAuth.batch_request_buffer_throttle + 10.seconds)).to_s(:rfc822)
       user.save!
     end
   end
 
   def expire_token(user, client_id)
-    if user.tokens[client_id]
-      user.tokens[client_id]['expiry'] = (Time.zone.now - (DeviseTokenAuth.token_lifespan.to_f + 10.seconds)).to_i
+    if user.auth_tokens[client_id]
+      user.auth_tokens[client_id]['expiry'] = (Time.zone.now - (DeviseTokenAuth.token_lifespan.to_f + 10.seconds)).to_i
       user.save!
     end
   end

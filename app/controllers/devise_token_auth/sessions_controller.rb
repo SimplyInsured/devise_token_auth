@@ -3,8 +3,11 @@
 # see http://www.emilsoman.com/blog/2013/05/18/building-a-tested/
 module DeviseTokenAuth
   class SessionsController < DeviseTokenAuth::ApplicationController
-    before_action :set_user_by_token, only: [:destroy]
-    after_action :reset_session, only: [:destroy]
+    # DINO - action --> filter
+    # before_action :set_user_by_token, only: [:destroy]
+    # after_action :reset_session, only: [:destroy]
+    before_filter :set_user_by_token, only: [:destroy]
+    after_filter :reset_session, only: [:destroy]
 
     def new
       render_new_error
@@ -46,13 +49,13 @@ module DeviseTokenAuth
     end
 
     def destroy
-      # remove auth instance variables so that after_action does not run
+      # remove auth instance variables so that after_filter does not run
       user = remove_instance_variable(:@resource) if @resource
       client = @token.client if @token.client
       @token.clear!
 
-      if user && client && user.tokens[client]
-        user.tokens.delete(client)
+      if user && client && user.auth_tokens[client]
+        user.auth_tokens.delete(client)
         user.save!
 
         yield user if block_given?
@@ -125,7 +128,14 @@ module DeviseTokenAuth
     private
 
     def resource_params
-      params.permit(*params_for_resource(:sign_in))
+      # params.permit(*params_for_resource(:sign_in))
+
+      # DINO - TODO: Don't think we need this refactor anymore, I think this was for
+      # redux-token-auth compatibility
+      ret = params.permit(*params_for_resource(:sign_in))
+      return ret if ret.present? || params['account'].nil?
+
+      params['account'].permit(*params_for_resource(:sign_in))
     end
   end
 end

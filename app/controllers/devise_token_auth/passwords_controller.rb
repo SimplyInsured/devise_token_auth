@@ -2,8 +2,8 @@
 
 module DeviseTokenAuth
   class PasswordsController < DeviseTokenAuth::ApplicationController
-    before_action :validate_redirect_url_param, only: [:create, :edit]
-    skip_after_action :update_auth_header, only: [:create, :edit]
+    before_filter :validate_redirect_url_param, only: [:create, :edit]
+    skip_after_filter :update_auth_header, only: [:create, :edit]
 
     # this action is responsible for generating password reset tokens and sending emails
     def create

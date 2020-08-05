@@ -40,7 +40,7 @@ class ConfirmableUser
   field :uid,      type: String, default: ''
 
   ## Tokens
-  field :tokens, type: Hash, default: {}
+  field :auth_tokens, type: Hash, default: {}
 
   # Include default devise modules.
   devise :database_authenticatable, :registerable,

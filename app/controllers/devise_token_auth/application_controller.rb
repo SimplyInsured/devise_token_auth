@@ -5,8 +5,11 @@ module DeviseTokenAuth
     include DeviseTokenAuth::Concerns::SetUserByToken
 
     def resource_data(opts = {})
-      response_data = opts[:resource_json] || @resource.as_json
+      # DINO: as_json --> attributes for DM support
+      # response_data = opts[:resource_json] || @resource.as_json
+      response_data = opts[:resource_json] || MultiJson.load(MultiJson.dump(@resource))
       response_data['type'] = @resource.class.name.parameterize if json_api?
+
       response_data
     end
 
@@ -45,7 +48,9 @@ module DeviseTokenAuth
       if m
         mapping = Devise.mappings[m]
       else
-        mapping = Devise.mappings[resource_name] || Devise.mappings.values.first
+        # DINO: Resource Name doesn't exist for our controllers, causing the below to error
+        mapping = Devise.mappings[:account] || Devise.mappings.values.first
+        # mapping = Devise.mappings[resource_name] || Devise.mappings.values.first
       end
 
       mapping.to

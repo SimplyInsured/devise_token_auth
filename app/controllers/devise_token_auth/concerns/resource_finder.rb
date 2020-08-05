@@ -20,19 +20,24 @@ module DeviseTokenAuth::Concerns::ResourceFinder
   end
 
   def find_resource(field, value)
-    @resource = if resource_class.try(:connection_config).try(:[], :adapter).try(:include?, 'mysql')
-                  # fix for mysql default case insensitivity
-                  resource_class.where("BINARY #{field} = ? AND provider= ?", value, provider).first
-                else
-                  resource_class.dta_find_by(field => value, 'provider' => provider)
-                end
+    # DINO: hack to get this working locally
+    # 'first' because DM, commenting out provider because it isn't populated locally
+    @resource = resource_class.first(field => value) #, 'provider' => provider)
+    # @resource = if resource_class.try(:connection_config).try(:[], :adapter).try(:include?, 'mysql')
+    #               # fix for mysql default case insensitivity
+    #               resource_class.where("BINARY #{field} = ? AND provider= ?", value, provider).first
+    #             else
+    #               resource_class.dta_find_by(field => value, 'provider' => provider)
+    #             end
   end
 
   def resource_class(m = nil)
     mapping = if m
                 Devise.mappings[m]
               else
-                Devise.mappings[resource_name] || Devise.mappings.values.first
+                # DINO: Resource Name doesn't exist for our controllers, causing the below to error
+                Devise.mappings[:account] || Devise.mappings.values.first
+                # Devise.mappings[resource_name] || Devise.mappings.values.first
               end
 
     mapping.to

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class DemoMangController < ApplicationController
-  before_action :authenticate_mang!
+  before_filter :authenticate_mang!
 
   def members_only
     render json: {

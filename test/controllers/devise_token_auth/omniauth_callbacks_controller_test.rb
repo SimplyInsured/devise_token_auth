@@ -57,7 +57,7 @@ class OmniauthTest < ActionDispatch::IntegrationTest
       expiry = controller.auth_params[:expiry]
 
       # the expiry should have been set
-      assert_equal expiry, @resource.tokens[client_id]['expiry'] || @resource.tokens[client_id][:expiry]
+      assert_equal expiry, @resource.auth_tokens[client_id]['expiry'] || @resource.auth_tokens[client_id][:expiry]
 
       # the token sent down to the client should now be valid
       assert @resource.valid_token?(token, client_id)
@@ -228,7 +228,7 @@ class OmniauthTest < ActionDispatch::IntegrationTest
     def assert_expected_data_in_new_window
       data = get_parsed_data_json
       expected_data = @resource.as_json.merge(controller.auth_params.as_json)
-      expected_data = ActiveSupport::JSON.decode(expected_data.to_json)
+      expected_data = ActiveSupport::JSON.decode(expected_data.attributes)
       assert_equal(expected_data.merge('message' => 'deliverCredentials'), data)
     end
 

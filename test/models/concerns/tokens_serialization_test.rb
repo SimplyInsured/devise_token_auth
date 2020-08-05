@@ -4,16 +4,16 @@ if DEVISE_TOKEN_AUTH_ORM == :active_record
   describe 'DeviseTokenAuth::Concerns::TokensSerialization' do
     let(:ts) { DeviseTokenAuth::Concerns::TokensSerialization }
     let(:user) { FactoryBot.create(:user) }
-    let(:tokens) do
+    let(:auth_tokens) do
       # Сreate all possible token's attributes combinations
       user.create_token
-      2.times { user.create_new_auth_token(user.tokens.first[0]) }
+      2.times { user.create_new_auth_token(user.auth_tokens.first[0]) }
       user.create_new_auth_token
       user.create_token
 
-      user.tokens
+      user.auth_tokens
     end
-    let(:json) { JSON.generate(tokens) }
+    let(:json) { JSON.generate(auth_tokens) }
 
     it 'is defined' do
       assert_equal(ts.present?, true)
@@ -56,14 +56,14 @@ if DEVISE_TOKEN_AUTH_ORM == :active_record
       end
 
       it 'deserialize tokens' do
-        assert_equal(ts.dump(tokens), json)
+        assert_equal(ts.dump(auth_tokens), json)
       end
 
       it 'removes nil values' do
-        new_tokens = tokens.dup
+        new_tokens = auth_tokens.dup
         new_tokens[new_tokens.first[0]][:kos] = nil
 
-        assert_equal(ts.dump(tokens), ts.dump(new_tokens))
+        assert_equal(ts.dump(auth_tokens), ts.dump(new_tokens))
       end
     end
   end

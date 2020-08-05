@@ -5,8 +5,11 @@ module DeviseTokenAuth::Concerns::SetUserByToken
   include DeviseTokenAuth::Concerns::ResourceFinder
 
   included do
-    before_action :set_request_start
-    after_action :update_auth_header
+    # DINO - before_action doesn't work in current stack
+    # before_action :set_request_start
+    # after_action :update_auth_header
+    before_filter :set_request_start
+    after_filter :update_auth_header
   end
 
   protected
@@ -25,15 +28,17 @@ module DeviseTokenAuth::Concerns::SetUserByToken
   # user auth
   def set_user_by_token(mapping = nil)
     # determine target authentication class
-    rc = resource_class(mapping)
+    # DINO - this was throwing an error (I think wrong # of arguments)
+    rc = resource_class # (mapping)
 
     # no default user defined
     return unless rc
 
+    # DINO - linted to include with_indifferent_access
     # gets the headers names, which was set in the initialize file
-    uid_name = DeviseTokenAuth.headers_names[:'uid']
-    access_token_name = DeviseTokenAuth.headers_names[:'access-token']
-    client_name = DeviseTokenAuth.headers_names[:'client']
+    uid_name = DeviseTokenAuth.headers_names.with_indifferent_access[:'uid']
+    access_token_name = DeviseTokenAuth.headers_names.with_indifferent_access[:'access-token']
+    client_name = DeviseTokenAuth.headers_names.with_indifferent_access[:'client']
 
     # parse header for values necessary for authentication
     uid              = request.headers[uid_name] || params[uid_name]
@@ -47,7 +52,8 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     # check for an existing user, authenticated via warden/devise, if enabled
     if DeviseTokenAuth.enable_standard_devise_support
       devise_warden_user = warden.user(rc.to_s.underscore.to_sym)
-      if devise_warden_user && devise_warden_user.tokens[@token.client].nil?
+      # DINO - tokens --> auth_tokens b/c namespace conflict
+      if devise_warden_user && devise_warden_user.auth_tokens[@token.client].nil?
         @used_auth_by_token = false
         @resource = devise_warden_user
         # REVIEW: The following line _should_ be safe to remove;
@@ -66,7 +72,10 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     end
 
     # mitigate timing attacks by finding by uid instead of auth token
-    user = uid && rc.dta_find_by(uid: uid)
+
+    # DINO: Fix for Datamapper not supporting find_by
+    # user = uid && rc.dta_find_by(uid: uid)
+    user = uid && rc.first(guid: uid)
     scope = rc.to_s.underscore.to_sym
 
     if user && user.valid_token?(@token.token, @token.client)
@@ -78,6 +87,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
       end
       return @resource = user
     else
+
       # zero all values previously set values
       @token.client = nil
       return @resource = nil
@@ -92,9 +102,10 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     @token.client = nil unless @used_auth_by_token
 
     if @used_auth_by_token && !DeviseTokenAuth.change_headers_on_each_request
+      # DINO - tokens --> auth_tokens b/c namespace conflict
       # should not append auth header if @resource related token was
       # cleared by sign out in the meantime
-      return if @resource.reload.tokens[@token.client].nil?
+      return if @resource.reload.auth_tokens[@token.client].nil?
 
       auth_header = @resource.build_auth_header(@token.token, @token.client)
 
@@ -103,7 +114,11 @@ module DeviseTokenAuth::Concerns::SetUserByToken
 
     else
       unless @resource.reload.valid?
-        @resource = @resource.class.find(@resource.to_param) # errors remain after reload
+        # DINO: Hack for DM Support
+        @resource = @resource.class.get(@resource.to_param) # errors remain after reload
+        # @resource = @resource.class.find(@resource.to_param) # errors remain after reload
+
+
         # if we left the model in a bad state, something is wrong in our app
         unless @resource.valid?
           raise DeviseTokenAuth::Errors::InvalidModel, "Cannot set auth token in invalid model. Errors: #{@resource.errors.full_messages}"
@@ -113,26 +128,36 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     end
   end
 
+  # DINO - added to help support redirect with auth params
+  def build_auth_params
+    return {} unless @resource && @token && @token.token
+
+    @resource.build_auth_header(@token.token, @token.client)
+  end
+
   private
 
   def refresh_headers
     # Lock the user record during any auth_header updates to ensure
     # we don't have write contention from multiple threads
-    @resource.with_lock do
+
+    # DINO: Skipping with_lock here for datamapper support
+    # @resource.with_lock do
       # should not append auth header if @resource related token was
       # cleared by sign out in the meantime
-      return if @used_auth_by_token && @resource.tokens[@token.client].nil?
+      return if @used_auth_by_token && @resource.auth_tokens[@token.client].nil?
 
       # update the response header
       response.headers.merge!(auth_header_from_batch_request)
-    end # end lock
+    # end # end lock
   end
 
   def is_batch_request?(user, client)
+    # DINO - tokens --> auth_tokens b/c namespace conflict
     !params[:unbatch] &&
-      user.tokens[client] &&
-      user.tokens[client]['updated_at'] &&
-      user.tokens[client]['updated_at'].to_time > @request_started_at - DeviseTokenAuth.batch_request_buffer_throttle
+      user.auth_tokens[client] &&
+      user.auth_tokens[client]['updated_at'] &&
+      user.auth_tokens[client]['updated_at'].to_time > @request_started_at - DeviseTokenAuth.batch_request_buffer_throttle
   end
 
   def auth_header_from_batch_request
@@ -147,7 +172,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
       auth_header = @resource.extend_batch_buffer(@token.token, @token.client)
 
       # Do not return token for batch requests to avoid invalidated
-      # tokens returned to the client in case of race conditions.
+      # auth_tokens returned to the client in case of race conditions.
       # Use a blank string for the header to still be present and
       # being passed in a XHR response in case of
       # 304 Not Modified responses.

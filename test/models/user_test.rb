@@ -7,8 +7,7 @@ class UserTest < ActiveSupport::TestCase
     describe 'serialization' do
       test 'hash should not include sensitive info' do
         @resource = build(:user)
-        refute @resource.as_json[:tokens]
-      end
+        refute @resource.as_json[:auth_tokens] end
     end
 
     describe 'creation' do
@@ -71,13 +70,11 @@ class UserTest < ActiveSupport::TestCase
       test 'should properly indicate whether token is current' do
         assert @resource.token_is_current?(@token, @client_id)
         # we want to update the expiry without forcing a cleanup (see below)
-        @resource.tokens[@client_id]['expiry'] = Time.zone.now.to_i - 10.seconds
-        refute @resource.token_is_current?(@token, @client_id)
+        @resource.auth_tokens[@client_id]['expiry'] = Time.zone.now.to_i - 10.seconds refute @resource.token_is_current?(@token, @client_id)
       end
     end
 
-    describe 'expired tokens are destroyed on save' do
-      before do
+    describe 'expired tokens are destroyed on save' do before do
         @resource = create(:user, :confirmed)
 
         @old_auth_headers = @resource.create_new_auth_token
@@ -86,11 +83,11 @@ class UserTest < ActiveSupport::TestCase
       end
 
       test 'expired token was removed' do
-        refute @resource.tokens[@old_auth_headers[:client]]
+        refute @resource.auth_tokens[@old_auth_headers[:client]]
       end
 
       test 'current token was not removed' do
-        assert @resource.tokens[@new_auth_headers['client']]
+        assert @resource.auth_tokens[@new_auth_headers['client']]
       end
     end
 
@@ -100,7 +97,7 @@ class UserTest < ActiveSupport::TestCase
       end
 
       test 'tokens can be set to nil' do
-        @resource.tokens = nil
+        @resource.auth_tokens = nil
         assert @resource.save
       end
     end

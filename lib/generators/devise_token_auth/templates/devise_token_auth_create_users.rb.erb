@@ -35,7 +35,7 @@ class DeviseTokenAuthCreate<%= user_class.pluralize.gsub("::","") %> < ActiveRec
       t.string :email
 
       ## Tokens
-      <%= json_supported_database? ? 't.json :tokens' : 't.text :tokens' %>
+      <%= json_supported_database? ? 't.json :auth_tokens' : 't.text :auth_tokens' %>
 
       t.timestamps
     end

@@ -92,7 +92,8 @@ module DeviseTokenAuth::Concerns::User
     def create_token(client: nil, lifespan: nil, cost: nil, **token_extras)
       token = DeviseTokenAuth::TokenFactory.create(client: client, lifespan: lifespan, cost: cost)
 
-      tokens[token.client] = {
+      # DINO - tokens --> auth_tokens
+      auth_tokens[token.client] = {
         token:  token.token_hash,
         expiry: token.expiry
       }.merge!(token_extras)
@@ -104,7 +105,8 @@ module DeviseTokenAuth::Concerns::User
   end
 
   def valid_token?(token, client = 'default')
-    return false unless tokens[client]
+    # DINO - tokens --> auth_tokens
+    return false unless auth_tokens[client]
     return true if token_is_current?(token, client)
     return true if token_can_be_reused?(token, client)
 
@@ -117,9 +119,10 @@ module DeviseTokenAuth::Concerns::User
   def send_confirmation_notification?; false; end
 
   def token_is_current?(token, client)
+    # DINO - tokens --> auth_tokens
     # ghetto HashWithIndifferentAccess
-    expiry     = tokens[client]['expiry'] || tokens[client][:expiry]
-    token_hash = tokens[client]['token'] || tokens[client][:token]
+    expiry     = auth_tokens[client]['expiry'] || auth_tokens[client][:expiry]
+    token_hash = auth_tokens[client]['token'] || auth_tokens[client][:token]
 
     return true if (
       # ensure that expiry and token are set
@@ -135,9 +138,10 @@ module DeviseTokenAuth::Concerns::User
 
   # allow batch requests to use the previous token
   def token_can_be_reused?(token, client)
+    # DINO - tokens --> auth_tokens
     # ghetto HashWithIndifferentAccess
-    updated_at = tokens[client]['updated_at'] || tokens[client][:updated_at]
-    last_token_hash = tokens[client]['last_token'] || tokens[client][:last_token]
+    updated_at = auth_tokens[client]['updated_at'] || auth_tokens[client][:updated_at]
+    last_token_hash = auth_tokens[client]['last_token'] || auth_tokens[client][:last_token]
 
     return true if (
       # ensure that the last token and its creation time exist
@@ -155,9 +159,10 @@ module DeviseTokenAuth::Concerns::User
   def create_new_auth_token(client = nil)
     now = Time.zone.now
 
+    # DINO - tokens --> auth_tokens
     token = create_token(
       client: client,
-      last_token: tokens.fetch(client, {})['token'],
+      last_token: auth_tokens.fetch(client, {})['token'],
       updated_at: now.to_s(:rfc822)
     )
 
@@ -165,9 +170,10 @@ module DeviseTokenAuth::Concerns::User
   end
 
   def build_auth_header(token, client = 'default')
+    # DINO - tokens --> auth_tokens
     # client may use expiry to prevent validation request if expired
     # must be cast as string or headers will break
-    expiry = tokens[client]['expiry'] || tokens[client][:expiry]
+    expiry = auth_tokens[client]['expiry'] || auth_tokens[client][:expiry]
 
     {
       DeviseTokenAuth.headers_names[:"access-token"] => token,
@@ -187,14 +193,16 @@ module DeviseTokenAuth::Concerns::User
   end
 
   def build_auth_url(base_url, args)
+    # DINO - tokens --> auth_tokens
     args[:uid]    = uid
-    args[:expiry] = tokens[args[:client_id]]['expiry']
+    args[:expiry] = auth_tokens[args[:client_id]]['expiry']
 
     DeviseTokenAuth::Url.generate(base_url, args)
   end
 
   def extend_batch_buffer(token, client)
-    tokens[client]['updated_at'] = Time.zone.now.to_s(:rfc822)
+    # DINO - tokens --> auth_tokens
+    auth_tokens[client]['updated_at'] = Time.zone.now.to_s(:rfc822)
     update_auth_header(token, client)
   end
 
@@ -203,14 +211,18 @@ module DeviseTokenAuth::Concerns::User
   end
 
   def token_validation_response
-    as_json(except: %i[tokens created_at updated_at])
+    # DINO - as_json --> attributes for DM support
+    # as_json(except: %i[auth_tokens created_at updated_at])
+
+    MultiJson.load(MultiJson.dump(self)).except(%i[auth_tokens created_at updated_at]) unless self.nil?
   end
 
   protected
 
   def destroy_expired_tokens
-    if tokens
-      tokens.delete_if do |cid, v|
+    # DINO - tokens --> auth_tokens
+    if auth_tokens
+      auth_tokens.delete_if do |cid, v|
         expiry = v[:expiry] || v['expiry']
         DateTime.strptime(expiry.to_s, '%s') < Time.zone.now
       end
@@ -228,30 +240,33 @@ module DeviseTokenAuth::Concerns::User
   end
 
   def remove_tokens_after_password_reset
-    return unless should_remove_tokens_after_password_reset?
+    return # unless should_remove_tokens_after_password_reset?
 
-    if tokens.present? && tokens.many?
-      client, token_data = tokens.max_by { |cid, v| v[:expiry] || v['expiry'] }
-      self.tokens = { client => token_data }
+    # DINO - tokens --> auth_tokens
+    if auth_tokens.present? && auth_tokens.many?
+      client, token_data = auth_tokens.max_by { |cid, v| v[:expiry] || v['expiry'] }
+      self.auth_tokens = { client => token_data }
     end
   end
 
   def max_client_tokens_exceeded?
-    tokens.length > DeviseTokenAuth.max_number_of_devices
+    # DINO - tokens --> auth_tokens
+    auth_tokens.length > DeviseTokenAuth.max_number_of_devices
   end
 
   def clean_old_tokens
-    if tokens.present? && max_client_tokens_exceeded?
+    # DINO - tokens --> auth_tokens
+    if auth_tokens.present? && max_client_tokens_exceeded?
       # Using Enumerable#sort_by on a Hash will typecast it into an associative
       #   Array (i.e. an Array of key-value Array pairs). However, since Hashes
       #   have an internal order in Ruby 1.9+, the resulting sorted associative
       #   Array can be converted back into a Hash, while maintaining the sorted
       #   order.
-      self.tokens = tokens.sort_by { |_cid, v| v[:expiry] || v['expiry'] }.to_h
+      self.auth_tokens = auth_tokens.sort_by { |_cid, v| v[:expiry] || v['expiry'] }.to_h
 
       # Since the tokens are sorted by expiry, shift the oldest client token
       #   off the Hash until it no longer exceeds the maximum number of clients
-      tokens.shift while max_client_tokens_exceeded?
+      auth_tokens.shift while max_client_tokens_exceeded?
     end
   end
 end

@@ -2,7 +2,7 @@
 
 class DemoGroupController < ApplicationController
   devise_token_auth_group :member, contains: [:user, :mang]
-  before_action :authenticate_member!
+  before_filter :authenticate_member!
 
   def members_only
     render json: {
