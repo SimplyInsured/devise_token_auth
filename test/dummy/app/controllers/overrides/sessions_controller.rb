@@ -5,9 +5,7 @@ module Overrides
     OVERRIDE_PROOF = '(^^,)'.freeze
 
     def create
-      # DINO Datamapper support
-      # @resource = resource_class.dta_find_by(email: resource_params[:email])
-      @resource = resource_class.first(email: resource_params[:email])
+      @resource = resource_class.dta_find_by(email: resource_params[:email])
 
       if @resource && valid_params?(:email, resource_params[:email]) && @resource.valid_password?(resource_params[:password]) && @resource.confirmed?
         @token = @resource.create_token

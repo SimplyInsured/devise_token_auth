@@ -5,9 +5,6 @@ module DeviseTokenAuth::Concerns::SetUserByToken
   include DeviseTokenAuth::Concerns::ResourceFinder
 
   included do
-    # DINO - before_action doesn't work in current stack
-    # before_action :set_request_start
-    # after_action :update_auth_header
     before_filter :set_request_start
     after_filter :update_auth_header
   end
@@ -27,14 +24,16 @@ module DeviseTokenAuth::Concerns::SetUserByToken
 
   # user auth
   def set_user_by_token(mapping = nil)
+    # DINO - Commenting out mapping parameter here because we're still using the old devise session controller
+    # for which this will break if we pass in any params (resource_class in old devise expects 0 params).
+    # Note that we've hard-coded resource_class to use :account, which will always be the value of mapping here.
+
     # determine target authentication class
-    # DINO - this was throwing an error (I think wrong # of arguments)
-    rc = resource_class # (mapping)
+    rc = resource_class#(mapping)
 
     # no default user defined
     return unless rc
 
-    # DINO - linted to include with_indifferent_access
     # gets the headers names, which was set in the initialize file
     uid_name = DeviseTokenAuth.headers_names.with_indifferent_access[:'uid']
     access_token_name = DeviseTokenAuth.headers_names.with_indifferent_access[:'access-token']
@@ -52,7 +51,6 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     # check for an existing user, authenticated via warden/devise, if enabled
     if DeviseTokenAuth.enable_standard_devise_support
       devise_warden_user = warden.user(rc.to_s.underscore.to_sym)
-      # DINO - tokens --> auth_tokens b/c namespace conflict
       if devise_warden_user && devise_warden_user.auth_tokens[@token.client].nil?
         @used_auth_by_token = false
         @resource = devise_warden_user
@@ -61,6 +59,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
         # @resource.create_new_auth_token
       end
     end
+
 
     # user has already been found and authenticated
     return @resource if @resource && @resource.is_a?(rc)
@@ -73,9 +72,8 @@ module DeviseTokenAuth::Concerns::SetUserByToken
 
     # mitigate timing attacks by finding by uid instead of auth token
 
-    # DINO: Fix for Datamapper not supporting find_by
-    # user = uid && rc.dta_find_by(uid: uid)
-    user = uid && rc.first(guid: uid)
+    # DINO - guid instead of uid for our model
+    user = uid && rc.dta_find_by(guid: uid)
     scope = rc.to_s.underscore.to_sym
 
     if user && user.valid_token?(@token.token, @token.client)
@@ -102,7 +100,6 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     @token.client = nil unless @used_auth_by_token
 
     if @used_auth_by_token && !DeviseTokenAuth.change_headers_on_each_request
-      # DINO - tokens --> auth_tokens b/c namespace conflict
       # should not append auth header if @resource related token was
       # cleared by sign out in the meantime
       return if @resource.reload.auth_tokens[@token.client].nil?
@@ -114,9 +111,8 @@ module DeviseTokenAuth::Concerns::SetUserByToken
 
     else
       unless @resource.reload.valid?
-        # DINO: Hack for DM Support
-        @resource = @resource.class.get(@resource.to_param) # errors remain after reload
-        # @resource = @resource.class.find(@resource.to_param) # errors remain after reload
+        # @resource = @resource.class.get(@resource.to_param) # errors remain after reload
+        @resource = @resource.class.find(@resource.to_param) # errors remain after reload
 
 
         # if we left the model in a bad state, something is wrong in our app
@@ -141,19 +137,17 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     # Lock the user record during any auth_header updates to ensure
     # we don't have write contention from multiple threads
 
-    # DINO: Skipping with_lock here for datamapper support
-    # @resource.with_lock do
+    @resource.with_lock do
       # should not append auth header if @resource related token was
       # cleared by sign out in the meantime
       return if @used_auth_by_token && @resource.auth_tokens[@token.client].nil?
 
       # update the response header
       response.headers.merge!(auth_header_from_batch_request)
-    # end # end lock
+    end # end lock
   end
 
   def is_batch_request?(user, client)
-    # DINO - tokens --> auth_tokens b/c namespace conflict
     !params[:unbatch] &&
       user.auth_tokens[client] &&
       user.auth_tokens[client]['updated_at'] &&

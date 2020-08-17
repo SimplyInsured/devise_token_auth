@@ -2,9 +2,6 @@
 
 module DeviseTokenAuth
   class TokenValidationsController < DeviseTokenAuth::ApplicationController
-    # DINO - action --> filter
-    # skip_before_action :assert_is_devise_resource!, only: [:validate_token]
-    # before_action :set_user_by_token, only: [:validate_token]
     skip_before_filter :assert_is_devise_resource!, only: [:validate_token]
     before_filter :set_user_by_token, only: [:validate_token]
 

@@ -2,8 +2,6 @@
 
 module DeviseTokenAuth
   class UnlocksController < DeviseTokenAuth::ApplicationController
-    # DINO - action --> filter
-    # skip_after_action :update_auth_header, only: [:create, :show]
     skip_after_filter :update_auth_header, only: [:create, :show]
 
     # this action is responsible for generating unlock tokens and

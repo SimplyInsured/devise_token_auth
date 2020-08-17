@@ -45,7 +45,7 @@ Child application controller for your API, using DeviseTokenAuth.
 module Api
   module V1
     class ApplicationController < ::ApplicationController
-      skip_before_action :verify_authenticity_token
+      skip_before_filter :verify_authenticity_token
       include DeviseTokenAuth::Concerns::SetUserByToken
     end
   end
@@ -57,7 +57,7 @@ Child application controller for full stack section, using standard Devise.
 ~~~ruby
 module Admin
   class ApplicationController < ::ApplicationController
-    before_action :authenticate_admin!
+    before_filter :authenticate_admin!
   end
 end
 ~~~

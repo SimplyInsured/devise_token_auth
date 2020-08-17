@@ -18,13 +18,13 @@ module DeviseTokenAuth::Concerns::UserOmniauthCallbacks
     # before :create, :sync_uid
   end
 
-  def ensure_uid
-    if provider != 'email' && !!uid
-      [false, 'No uid provided']
-    else
-      [true]
-    end
-  end
+  # def ensure_uid
+  #   if provider != 'email' && !!uid
+  #     [false, 'No uid provided']
+  #   else
+  #     [true]
+  #   end
+  # end
 
   protected
 

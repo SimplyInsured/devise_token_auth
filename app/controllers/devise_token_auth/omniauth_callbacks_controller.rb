@@ -4,13 +4,8 @@ module DeviseTokenAuth
   class OmniauthCallbacksController < DeviseTokenAuth::ApplicationController
     attr_reader :auth_params
 
-    # DINO - action --> filter
-    #before_action :validate_auth_origin_url_param
     before_filter :validate_auth_origin_url_param
 
-    # DINO - action --> filter
-    # skip_before_action :set_user_by_token, raise: false
-    # skip_after_action :update_auth_header
     skip_before_filter :set_user_by_token, raise: false
     skip_after_filter :update_auth_header
 
@@ -75,9 +70,7 @@ module DeviseTokenAuth
 
       yield @resource if block_given?
 
-      # DINO: as_json --> attributes for DM support
-      # render_data_or_redirect('deliverCredentials', @auth_params.as_json, @resource.as_json)
-      render_data_or_redirect('deliverCredentials', MultiJson.load(MultiJson.dump(@auth_params)), MultiJson.load(MultiJson.dump(@resource)))
+      render_data_or_redirect('deliverCredentials', @auth_params.as_json, @resource.as_json)
     end
 
     def omniauth_failure

@@ -43,7 +43,7 @@ This gem supports the use of multiple user models. One possible use case is to a
   ~~~
 
 1. Configure any `Admin` restricted controllers. Controllers will now have access to the methods [described here](#methods):
-  * `before_action :authenticate_admin!`
+  * `before_filter :authenticate_admin!`
   * `current_admin`
   * `admin_signed_in?`
 
@@ -57,7 +57,7 @@ It is also possible to control access to multiple user types at the same time us
 ~~~ruby
 class DemoGroupController < ApplicationController
   devise_token_auth_group :member, contains: [:user, :admin]
-  before_action :authenticate_member!
+  before_filter :authenticate_member!
 
   def members_only
     render json: {
@@ -72,6 +72,6 @@ end
 
 In the above example, the following methods will be available (in addition to `current_user`, `current_admin`, etc.):
 
-  * `before_action: :authenticate_member!`
+  * `before_filter: :authenticate_member!`
   * `current_member`
   * `member_signed_in?`

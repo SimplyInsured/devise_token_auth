@@ -3,9 +3,6 @@
 # see http://www.emilsoman.com/blog/2013/05/18/building-a-tested/
 module DeviseTokenAuth
   class SessionsController < DeviseTokenAuth::ApplicationController
-    # DINO - action --> filter
-    # before_action :set_user_by_token, only: [:destroy]
-    # after_action :reset_session, only: [:destroy]
     before_filter :set_user_by_token, only: [:destroy]
     after_filter :reset_session, only: [:destroy]
 
@@ -128,14 +125,14 @@ module DeviseTokenAuth
     private
 
     def resource_params
-      # params.permit(*params_for_resource(:sign_in))
+      params.permit(*params_for_resource(:sign_in))
 
       # DINO - TODO: Don't think we need this refactor anymore, I think this was for
       # redux-token-auth compatibility
-      ret = params.permit(*params_for_resource(:sign_in))
-      return ret if ret.present? || params['account'].nil?
-
-      params['account'].permit(*params_for_resource(:sign_in))
+      # ret = params.permit(*params_for_resource(:sign_in))
+      # return ret if ret.present? || params['account'].nil?
+      #
+      # params['account'].permit(*params_for_resource(:sign_in))
     end
   end
 end

@@ -4,7 +4,7 @@
 
 This gem includes a [Rails concern](http://api.rubyonrails.org/classes/ActiveSupport/Concern.html) called `DeviseTokenAuth::Concerns::SetUserByToken`. Include this concern to provide access to controller methods such as `authenticate_user!`, `user_signed_in?`, etc.
 
-The concern also runs an [after_action](http://guides.rubyonrails.org/action_controller_overview.html#filters) that changes the auth token after each request.
+The concern also runs an [after_filter](http://guides.rubyonrails.org/action_controller_overview.html#filters) that changes the auth token after each request.
 
 It is recommended to include the concern in your base `ApplicationController` so that all children of that controller include the concern as well.
 
@@ -23,7 +23,7 @@ This gem provides access to all of the following [devise helpers](https://github
 
 | Method | Description |
 |---|---|
-| **`before_action :authenticate_user!`** | Returns a 401 error unless a `User` is signed-in. |
+| **`before_filter :authenticate_user!`** | Returns a 401 error unless a `User` is signed-in. |
 | **`current_user`** | Returns the currently signed-in `User`, or `nil` if unavailable. |
 | **`user_signed_in?`** | Returns `true` if a `User` is signed in, otherwise `false`. |
 | **`devise_token_auth_group`** | Operate on multiple user classes as a group. [Read more](#group-access) |
@@ -31,7 +31,7 @@ This gem provides access to all of the following [devise helpers](https://github
 
 Note that if the model that you're trying to access isn't called `User`, the helper method names will change. For example, if the user model is called `Admin`, the methods would look like this:
 
-* `before_action :authenticate_admin!`
+* `before_filter :authenticate_admin!`
 * `admin_signed_in?`
 * `current_admin`
 
@@ -40,7 +40,7 @@ Note that if the model that you're trying to access isn't called `User`, the hel
 ~~~ruby
 # app/controllers/test_controller.rb
 class TestController < ApplicationController
-  before_action :authenticate_user!
+  before_filter :authenticate_user!
 
   def members_only
     render json: {

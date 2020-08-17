@@ -2,11 +2,6 @@
 
 module DeviseTokenAuth
   class RegistrationsController < DeviseTokenAuth::ApplicationController
-    # DINO - action --> filter
-    # before_action :set_user_by_token, only: [:destroy, :update]
-    # before_action :validate_sign_up_params, only: :create
-    # before_action :validate_account_update_params, only: :update
-    # skip_after_action :update_auth_header, only: [:create, :destroy]
     before_filter :set_user_by_token, only: [:destroy, :update]
     before_filter :validate_sign_up_params, only: :create
     before_filter :validate_account_update_params, only: :update
@@ -37,11 +32,10 @@ module DeviseTokenAuth
 
       # override email confirmation, must be sent manually from ctrl
 
-      # DINO - SKIPPING ACTIVE RECORD STUFF
-      # callback_name = defined?(ActiveRecord) && resource_class < ActiveRecord::Base ? :commit : :create
-      #
-      # resource_class.set_callback(callback_name, :after, :send_on_create_confirmation_instructions)
-      # resource_class.skip_callback(callback_name, :after, :send_on_create_confirmation_instructions)
+      callback_name = defined?(ActiveRecord) && resource_class < ActiveRecord::Base ? :commit : :create
+
+      resource_class.set_callback(callback_name, :after, :send_on_create_confirmation_instructions)
+      resource_class.skip_callback(callback_name, :after, :send_on_create_confirmation_instructions)
 
       if @resource.respond_to? :skip_confirmation_notification!
         # Fix duplicate e-mails by disabling Devise confirmation e-mail

@@ -22,10 +22,15 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = ">= 2.1.0"
 
+  # DINO - Dependency management.  We should aim to use the commented-out dependencies.
+  # s.add_dependency 'rails', '>= 3.2.0', '< 6.1'
+  # s.add_dependency 'sprockets', '>= 2.2.1' # FIXME: breaking changes in 4.0.0
+  # s.add_dependency 'devise', '> 3.5.2', '< 5'
+  # s.add_dependency 'bcrypt', '~> 3.0'
   s.add_dependency 'rails', '>= 3.2.0', '< 6.1'
   s.add_dependency 'sprockets', '>= 2.2.1' # FIXME: breaking changes in 4.0.0
-  s.add_dependency 'devise', '> 3.5.2', '< 5'
-  s.add_dependency 'bcrypt', '~> 3.0'
+  s.add_dependency 'devise', '>= 2.2.3', '< 5'
+  s.add_dependency 'bcrypt-ruby', '~> 3.0'
 
   s.add_development_dependency 'appraisal'
   s.add_development_dependency 'sqlite3', '~> 1.4'
